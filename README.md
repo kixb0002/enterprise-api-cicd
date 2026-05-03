@@ -277,3 +277,6 @@ Puis lancer depuis la racine du projet :
 ```powershell
 .\scripts\create-azure-resources.ps1
 ```
+
+
+FIN
