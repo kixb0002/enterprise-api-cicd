@@ -41,6 +41,10 @@ jobs:
       - name: Checkout code
         # Utilise l'action officielle checkout.
         uses: actions/checkout@v4
+        # Recupere tout l'historique Git pour que Gitleaks puisse comparer les commits de la PR.
+        with:
+          # 0 veut dire: telecharger tout l'historique, pas seulement le dernier commit.
+          fetch-depth: 0
 
       # Installe le SDK .NET.
       - name: Setup .NET
@@ -151,7 +155,7 @@ jobs:
         # Execute cette etape seulement sur main.
         if: github.ref == 'refs/heads/main'
         # Utilise l'action Trivy.
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.35.0
         # Parametres du scan Trivy.
         with:
           # Image Docker a analyser.
@@ -168,7 +172,7 @@ jobs:
         # Execute cette etape seulement sur main.
         if: github.ref == 'refs/heads/main'
         # Utilise l'action Trivy.
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.35.0
         # Parametres de generation de SBOM.
         with:
           # Image Docker source de la SBOM.
