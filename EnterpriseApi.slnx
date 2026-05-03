@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/Enterprise.Api/Enterprise.Api.csproj" />
+  <Project Path="tests/Enterprise.Api.UnitTests/Enterprise.Api.UnitTests.csproj" />
+  <Project Path="tests/Enterprise.Api.IntegrationTests/Enterprise.Api.IntegrationTests.csproj" />
+</Solution>

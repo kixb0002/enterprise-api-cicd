@@ -1,0 +1,26 @@
+# Ignore les dossiers de sortie compiles par .NET.
+bin/
+
+# Ignore les fichiers temporaires generes par .NET pendant restore/build.
+obj/
+
+# Ignore les fichiers locaux de Visual Studio.
+.vs/
+
+# Ignore la configuration locale de Visual Studio Code.
+.vscode/
+
+# Ignore les fichiers de configuration utilisateur Visual Studio.
+*.user
+
+# Ignore les fichiers de solution utilisateur Visual Studio.
+*.suo
+
+# Ignore les resultats de tests generes localement.
+TestResults/
+
+# Ignore les rapports de couverture de code.
+coverage/
+
+# Ignore les variables d'environnement locales et secrets potentiels.
+.env

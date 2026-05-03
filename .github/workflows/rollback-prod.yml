@@ -1,0 +1,55 @@
+# Nom affiche dans l'onglet Actions de GitHub.
+name: Rollback - Swap Back Production
+
+# Definit les evenements qui declenchent le workflow.
+on:
+  # Permet de lancer le rollback manuellement depuis GitHub Actions.
+  workflow_dispatch:
+
+# Permissions donnees au token GitHub Actions.
+permissions:
+  # Autorise la lecture du contenu du depot.
+  contents: read
+  # Autorise l'authentification OIDC vers Azure.
+  id-token: write
+
+# Liste des jobs du workflow.
+jobs:
+  # Job de rollback qui inverse production et green.
+  rollback:
+    # Execute le job sur un runner Linux fourni par GitHub.
+    runs-on: ubuntu-latest
+    # Associe le job a l'environnement GitHub production.
+    environment: production
+
+    # Liste des etapes du job.
+    steps:
+      # Connexion a Azure avec OIDC.
+      - name: Azure login with OIDC
+        # Utilise l'action officielle Azure login.
+        uses: azure/login@v2
+        # Parametres de connexion Azure.
+        with:
+          # Client ID de l'App Registration GitHub OIDC.
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          # Tenant ID Azure.
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          # Subscription ID Azure.
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Inverse le slot green et la production.
+      - name: Swap back production and green
+        # Refait un swap entre green et production pour revenir a la version precedente.
+        run: |
+          az webapp deployment slot swap \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --name ${{ vars.APP_NAME }} \
+            --slot ${{ vars.SLOT_NAME }} \
+            --target-slot production
+
+      # Verifie que la production repond apres rollback.
+      - name: Validate production after rollback
+        # Attend la stabilisation puis teste l'endpoint health en production.
+        run: |
+          sleep 20
+          curl -f https://${{ vars.APP_NAME }}.azurewebsites.net/health

@@ -1,0 +1,201 @@
+# Nom affiche dans l'onglet Actions de GitHub.
+name: CI - Build Test Security Package
+
+# Definit les evenements qui declenchent le workflow.
+on:
+  # Lance le workflow lors des pull requests.
+  pull_request:
+    # Limite les pull requests ciblees aux branches main et develop.
+    branches: ["main", "develop"]
+  # Lance le workflow lors des push.
+  push:
+    # Limite les push aux branches main et develop.
+    branches: ["main", "develop"]
+
+# Definit les permissions du token GitHub Actions.
+permissions:
+  # Autorise la lecture du code source.
+  contents: read
+  # Autorise l'authentification OIDC vers Azure.
+  id-token: write
+  # Autorise l'ecriture de resultats de securite dans GitHub Security.
+  security-events: write
+
+# Variables d'environnement disponibles dans tout le workflow.
+env:
+  # Version du SDK .NET utilisee par le pipeline.
+  DOTNET_VERSION: "8.0.x"
+  # Nom de l'image Docker construite par le pipeline.
+  IMAGE_NAME: "enterprise-api"
+
+# Liste des jobs executes par le workflow.
+jobs:
+  # Job principal qui compile, teste, scanne et package l'application.
+  build-test-scan-package:
+    # Execute le job sur un runner Linux fourni par GitHub.
+    runs-on: ubuntu-latest
+
+    # Liste des etapes executees dans ce job.
+    steps:
+      # Recupere le code du depot GitHub.
+      - name: Checkout code
+        # Utilise l'action officielle checkout.
+        uses: actions/checkout@v4
+
+      # Installe le SDK .NET.
+      - name: Setup .NET
+        # Utilise l'action officielle setup-dotnet.
+        uses: actions/setup-dotnet@v4
+        # Parametres passes a l'action setup-dotnet.
+        with:
+          # Installe la version .NET definie dans env.DOTNET_VERSION.
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Restaure les dependances NuGet de la solution.
+      - name: Restore dependencies
+        # Execute dotnet restore sur la solution.
+        run: dotnet restore EnterpriseApi.sln
+
+      # Verifie que le code respecte le format attendu.
+      - name: Format check
+        # Echoue si dotnet format detecte des changements necessaires.
+        run: dotnet format EnterpriseApi.sln --verify-no-changes --verbosity diagnostic
+
+      # Compile la solution.
+      - name: Build
+        # Compile en Release sans refaire le restore.
+        run: dotnet build EnterpriseApi.sln --configuration Release --no-restore
+
+      # Lance les tests unitaires.
+      - name: Run unit tests
+        # Execute le projet xUnit de tests unitaires et genere un fichier TRX.
+        run: dotnet test tests/Enterprise.Api.UnitTests/Enterprise.Api.UnitTests.csproj --configuration Release --no-build --logger trx
+
+      # Lance les tests d'integration.
+      - name: Run integration tests
+        # Execute le projet xUnit de tests d'integration et genere un fichier TRX.
+        run: dotnet test tests/Enterprise.Api.IntegrationTests/Enterprise.Api.IntegrationTests.csproj --configuration Release --no-build --logger trx
+
+      # Installe l'outil de couverture de code.
+      - name: Install coverage tool
+        # Installe dotnet-coverage dans les outils globaux du runner.
+        run: dotnet tool install --global dotnet-coverage
+
+      # Genere un rapport de couverture.
+      - name: Run coverage
+        # Execute tous les tests et collecte la couverture au format XML.
+        run: |
+          dotnet-coverage collect "dotnet test EnterpriseApi.sln --configuration Release --no-build" \
+            -f xml \
+            -o coverage.xml
+
+      # Analyse les dependances avec OWASP Dependency Check.
+      - name: OWASP Dependency Check
+        # Utilise l'action Dependency Check.
+        uses: dependency-check/Dependency-Check_Action@main
+        # Parametres de l'analyse Dependency Check.
+        with:
+          # Nom du projet affiche dans le rapport.
+          project: "enterprise-api"
+          # Chemin a analyser.
+          path: "."
+          # Format du rapport genere.
+          format: "HTML"
+          # Dossier de sortie du rapport.
+          out: "dependency-check-report"
+
+      # Recherche des secrets accidentellement commits.
+      - name: Secret scanning with Gitleaks
+        # Utilise l'action Gitleaks.
+        uses: gitleaks/gitleaks-action@v2
+        # Variables d'environnement passees a Gitleaks.
+        env:
+          # Token GitHub utilise par l'action.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Se connecte a Azure avec OIDC uniquement sur la branche main.
+      - name: Azure login with OIDC
+        # Execute cette etape seulement pour les push sur main.
+        if: github.ref == 'refs/heads/main'
+        # Utilise l'action officielle Azure login.
+        uses: azure/login@v2
+        # Parametres de connexion Azure.
+        with:
+          # Client ID de l'App Registration GitHub OIDC.
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          # Tenant ID Azure.
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          # Subscription ID Azure.
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Connecte Docker a Azure Container Registry.
+      - name: Login to ACR
+        # Execute cette etape seulement sur main.
+        if: github.ref == 'refs/heads/main'
+        # Authentifie Docker sur l'ACR.
+        run: az acr login --name ${{ vars.ACR_NAME }}
+
+      # Construit l'image Docker.
+      - name: Docker build
+        # Execute cette etape seulement sur main.
+        if: github.ref == 'refs/heads/main'
+        # Construit l'image avec un tag commit SHA et un tag latest.
+        run: |
+          docker build \
+            -t ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            -t ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest \
+            .
+
+      # Scanne l'image Docker avec Trivy.
+      - name: Trivy image scan
+        # Execute cette etape seulement sur main.
+        if: github.ref == 'refs/heads/main'
+        # Utilise l'action Trivy.
+        uses: aquasecurity/trivy-action@0.28.0
+        # Parametres du scan Trivy.
+        with:
+          # Image Docker a analyser.
+          image-ref: "${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          # Affiche les resultats en tableau dans les logs.
+          format: "table"
+          # Filtre les vulnerabilites hautes et critiques.
+          severity: "HIGH,CRITICAL"
+          # Fait echouer le job si Trivy detecte une vulnerabilite filtree.
+          exit-code: "1"
+
+      # Genere une SBOM CycloneDX avec Trivy.
+      - name: Generate SBOM with Trivy
+        # Execute cette etape seulement sur main.
+        if: github.ref == 'refs/heads/main'
+        # Utilise l'action Trivy.
+        uses: aquasecurity/trivy-action@0.28.0
+        # Parametres de generation de SBOM.
+        with:
+          # Image Docker source de la SBOM.
+          image-ref: "${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          # Produit une SBOM au format CycloneDX.
+          format: "cyclonedx"
+          # Nom du fichier SBOM genere.
+          output: "sbom-cyclonedx.json"
+
+      # Publie la SBOM comme artefact GitHub Actions.
+      - name: Upload SBOM artifact
+        # Execute cette etape seulement sur main.
+        if: github.ref == 'refs/heads/main'
+        # Utilise l'action officielle d'upload d'artefacts.
+        uses: actions/upload-artifact@v4
+        # Parametres de l'artefact.
+        with:
+          # Nom de l'artefact visible dans GitHub Actions.
+          name: sbom-cyclonedx
+          # Fichier a publier comme artefact.
+          path: sbom-cyclonedx.json
+
+      # Pousse l'image Docker vers Azure Container Registry.
+      - name: Push Docker image to ACR
+        # Execute cette etape seulement sur main.
+        if: github.ref == 'refs/heads/main'
+        # Pousse les deux tags vers ACR.
+        run: |
+          docker push ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest

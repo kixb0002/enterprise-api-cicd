@@ -1,0 +1,17 @@
+# Ignore les dossiers de sortie compiles par .NET.
+bin/
+
+# Ignore les fichiers temporaires generes par .NET pendant restore/build.
+obj/
+
+# Ignore l'historique Git pour reduire le contexte Docker.
+.git/
+
+# Ignore les workflows GitHub Actions, inutiles dans l'image Docker.
+.github/
+
+# Ignore la configuration locale de VS Code.
+.vscode/
+
+# Ignore la documentation, non necessaire pour compiler ou executer l'API.
+README.md
