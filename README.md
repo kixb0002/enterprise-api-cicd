@@ -15,17 +15,16 @@ L'objectif est de montrer une chaine CI/CD professionnelle :
 
 ## Architecture
 
-```text
-Developer
-  -> Git branch feature/*
-  -> Pull Request vers main
-  -> GitHub Actions CI
-  -> Merge dans main
-  -> Build Docker + scan + push ACR
-  -> CD manuel vers slot green
-  -> Warm-up green
-  -> Swap green vers production
-```
+![Architecture CI/CD Enterprise API](docs/architecture.svg)
+
+Le schema montre le flux principal :
+
+- le developpeur pousse une branche `feature/*` ;
+- une Pull Request vers `main` declenche le CI ;
+- apres merge dans `main`, le CI construit, scanne et pousse l'image Docker dans ACR ;
+- le workflow CD manuel deploie l'image sur le slot `green` ;
+- le slot `green` est teste avant le swap vers production ;
+- le rollback manuel refait un swap inverse entre `production` et `green`.
 
 Ressources Azure utilisees :
 
