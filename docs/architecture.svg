@@ -1,0 +1,182 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="820" viewBox="0 0 1400 820" role="img" aria-labelledby="title desc">
+  <title id="title">Enterprise API CI/CD Architecture</title>
+  <desc id="desc">Architecture diagram showing developer workflow, GitHub Actions CI/CD, Azure Container Registry, App Service blue green slots, Key Vault, Application Insights and Log Analytics.</desc>
+
+  <defs>
+    <style>
+      .bg { fill: #f7f9fc; }
+      .panel { fill: #ffffff; stroke: #d8e0ea; stroke-width: 2; rx: 16; }
+      .panel-blue { fill: #eef6ff; stroke: #9cc9ff; stroke-width: 2; rx: 16; }
+      .panel-green { fill: #eefaf3; stroke: #8fd6aa; stroke-width: 2; rx: 16; }
+      .panel-orange { fill: #fff7ed; stroke: #fdba74; stroke-width: 2; rx: 16; }
+      .title { font: 700 32px Arial, sans-serif; fill: #132238; }
+      .subtitle { font: 400 16px Arial, sans-serif; fill: #526173; }
+      .label { font: 700 17px Arial, sans-serif; fill: #1f2937; }
+      .small { font: 400 13px Arial, sans-serif; fill: #4b5563; }
+      .tiny { font: 400 12px Arial, sans-serif; fill: #64748b; }
+      .mono { font: 700 12px Consolas, monospace; fill: #334155; }
+      .arrow { stroke: #2563eb; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+      .arrow-green { stroke: #16a34a; stroke-width: 3; fill: none; marker-end: url(#arrowhead-green); }
+      .arrow-gray { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrowhead-gray); }
+      .azure { fill: #0078d4; }
+      .github { fill: #24292f; }
+      .docker { fill: #1d63ed; }
+      .success { fill: #16a34a; }
+      .warn { fill: #f97316; }
+      .slot-prod { fill: #e0f2fe; stroke: #0284c7; stroke-width: 2; rx: 12; }
+      .slot-green { fill: #dcfce7; stroke: #16a34a; stroke-width: 2; rx: 12; }
+      .chip { fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1.5; rx: 10; }
+    </style>
+
+    <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#2563eb" />
+    </marker>
+    <marker id="arrowhead-green" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#16a34a" />
+    </marker>
+    <marker id="arrowhead-gray" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#64748b" />
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="1400" height="820" />
+
+  <text class="title" x="60" y="58">Enterprise API CI/CD Architecture</text>
+  <text class="subtitle" x="60" y="86">ASP.NET Core API, GitHub Actions OIDC, Azure Container Registry, App Service Blue/Green, Key Vault and Observability</text>
+
+  <!-- Developer and GitHub area -->
+  <rect class="panel" x="55" y="130" width="330" height="260" />
+  <circle cx="115" cy="190" r="34" fill="#dbeafe" stroke="#60a5fa" stroke-width="2" />
+  <path d="M115 168a13 13 0 1 1 0 26a13 13 0 0 1 0-26zm-28 72c5-21 51-21 56 0" fill="none" stroke="#2563eb" stroke-width="5" stroke-linecap="round" />
+  <text class="label" x="165" y="185">Developer</text>
+  <text class="small" x="165" y="210">Feature branch</text>
+  <text class="mono" x="165" y="235">feature/add-api-version</text>
+
+  <rect class="chip" x="85" y="285" width="255" height="58" />
+  <text class="label" x="110" y="311">Pull Request</text>
+  <text class="small" x="110" y="333">Target branch: main</text>
+
+  <rect class="panel-blue" x="455" y="130" width="390" height="260" />
+  <circle cx="520" cy="188" r="34" class="github" />
+  <path d="M507 205c-17 5-17-8-24-10m48 24v-13c0-4-1-7-4-10c14-2 29-7 29-31c0-7-2-13-7-18c1-2 3-9-1-18c0 0-6-2-20 7c-6-2-13-3-20-3s-14 1-20 3c-14-9-20-7-20-7c-4 9-2 16-1 18c-5 5-7 11-7 18c0 24 15 29 29 31c-2 2-3 5-4 8" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <text class="label" x="575" y="177">GitHub</text>
+  <text class="small" x="575" y="202">Repository + Pull Request</text>
+  <text class="small" x="575" y="226">Branch protection on main</text>
+
+  <rect class="chip" x="490" y="275" width="315" height="70" />
+  <text class="label" x="515" y="303">Required Check</text>
+  <text class="small" x="515" y="326">CI - Build Test Security Package</text>
+
+  <!-- CI pipeline -->
+  <rect class="panel-blue" x="920" y="105" width="420" height="320" />
+  <text class="label" x="955" y="145">GitHub Actions CI</text>
+  <text class="small" x="955" y="170">Runs on Pull Request and main</text>
+
+  <g transform="translate(955 200)">
+    <rect class="chip" x="0" y="0" width="155" height="46" />
+    <text class="small" x="18" y="20">Restore</text>
+    <text class="tiny" x="18" y="37">NuGet packages</text>
+
+    <rect class="chip" x="180" y="0" width="155" height="46" />
+    <text class="small" x="198" y="20">Build</text>
+    <text class="tiny" x="198" y="37">Release compile</text>
+
+    <rect class="chip" x="0" y="65" width="155" height="46" />
+    <text class="small" x="18" y="85">Tests</text>
+    <text class="tiny" x="18" y="102">Unit + integration</text>
+
+    <rect class="chip" x="180" y="65" width="155" height="46" />
+    <text class="small" x="198" y="85">Coverage</text>
+    <text class="tiny" x="198" y="102">dotnet-coverage</text>
+
+    <rect class="chip" x="0" y="130" width="155" height="46" />
+    <text class="small" x="18" y="150">Security</text>
+    <text class="tiny" x="18" y="167">OWASP + Gitleaks</text>
+
+    <rect class="chip" x="180" y="130" width="155" height="46" />
+    <text class="small" x="198" y="150">Docker</text>
+    <text class="tiny" x="198" y="167">main only</text>
+  </g>
+
+  <rect class="panel-orange" x="920" y="455" width="420" height="260" />
+  <text class="label" x="955" y="495">Security Package On main</text>
+  <text class="small" x="955" y="520">Executed only after merge into main</text>
+  <circle cx="980" cy="565" r="20" class="docker" />
+  <rect x="966" y="556" width="28" height="18" fill="#ffffff" rx="3" />
+  <circle cx="973" cy="579" r="3" fill="#ffffff" />
+  <circle cx="989" cy="579" r="3" fill="#ffffff" />
+  <text class="small" x="1020" y="562">Build Docker image</text>
+  <text class="tiny" x="1020" y="581">Tags: latest + GitHub SHA</text>
+
+  <circle cx="980" cy="625" r="20" fill="#0f766e" />
+  <path d="M970 625l7 7l14-17" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <text class="small" x="1020" y="622">Trivy scan + SBOM</text>
+  <text class="tiny" x="1020" y="641">Vulnerabilities and components</text>
+
+  <!-- Azure area -->
+  <rect class="panel" x="55" y="470" width="790" height="285" />
+  <text class="label" x="90" y="510">Azure Platform</text>
+  <text class="small" x="90" y="535">Resource Group: RG-Taoufik-Mellah</text>
+
+  <g transform="translate(90 570)">
+    <rect class="panel-blue" x="0" y="0" width="210" height="130" />
+    <path class="azure" d="M52 25l-30 86h28l49-86zm14 32l-20 54h69z" />
+    <text class="label" x="95" y="50">ACR</text>
+    <text class="small" x="95" y="74">acrenterpriseapi001</text>
+    <text class="tiny" x="95" y="98">enterprise-api:latest</text>
+  </g>
+
+  <g transform="translate(345 570)">
+    <rect class="panel-green" x="0" y="0" width="250" height="130" />
+    <text class="label" x="25" y="35">App Service</text>
+    <rect class="slot-prod" x="25" y="55" width="90" height="45" />
+    <text class="small" x="43" y="83">prod</text>
+    <rect class="slot-green" x="135" y="55" width="90" height="45" />
+    <text class="small" x="158" y="83">green</text>
+    <text class="tiny" x="25" y="116">Blue/Green swap</text>
+  </g>
+
+  <g transform="translate(645 570)">
+    <rect class="panel-orange" x="0" y="0" width="165" height="130" />
+    <path d="M42 44a24 24 0 1 1 48 0v18h-14V44a10 10 0 0 0-20 0v18H42z" fill="#f97316" />
+    <rect x="34" y="60" width="64" height="46" rx="8" fill="#fdba74" stroke="#ea580c" stroke-width="2" />
+    <text class="label" x="108" y="55">Key</text>
+    <text class="label" x="108" y="78">Vault</text>
+    <text class="tiny" x="28" y="118">ApiSecret</text>
+  </g>
+
+  <!-- Observability -->
+  <rect class="panel-blue" x="455" y="430" width="390" height="100" />
+  <circle cx="505" cy="480" r="24" class="azure" />
+  <path d="M493 483l8 8l18-24" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <text class="label" x="545" y="468">Observability</text>
+  <text class="small" x="545" y="492">Application Insights + Log Analytics</text>
+
+  <!-- CD and rollback -->
+  <rect class="panel-green" x="55" y="410" width="330" height="80" />
+  <text class="label" x="90" y="443">CD Blue/Green</text>
+  <text class="small" x="90" y="467">Manual workflow deploys image tag to green, validates, then swaps.</text>
+
+  <rect class="panel-orange" x="920" y="745" width="420" height="45" />
+  <text class="label" x="955" y="773">Rollback: manual swap production and green</text>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M385 260 C420 260 420 260 455 260" />
+  <path class="arrow" d="M845 260 C880 260 880 260 920 260" />
+  <path class="arrow-green" d="M1130 425 L1130 455" />
+  <path class="arrow-green" d="M920 625 C870 625 865 625 845 625" />
+  <path class="arrow-green" d="M300 635 L345 635" />
+  <path class="arrow-gray" d="M595 635 L645 635" />
+  <path class="arrow-gray" d="M595 570 C610 530 510 535 510 530" />
+  <path class="arrow" d="M220 390 L220 410" />
+  <path class="arrow-green" d="M385 450 C430 450 430 500 455 500" />
+
+  <!-- Legend -->
+  <rect class="panel" x="55" y="760" width="790" height="38" />
+  <circle cx="85" cy="779" r="8" fill="#2563eb" />
+  <text class="tiny" x="102" y="783">CI validation and control flow</text>
+  <circle cx="300" cy="779" r="8" fill="#16a34a" />
+  <text class="tiny" x="317" y="783">Main branch packaging and deployment flow</text>
+  <circle cx="610" cy="779" r="8" fill="#64748b" />
+  <text class="tiny" x="627" y="783">Runtime dependency and telemetry</text>
+</svg>
