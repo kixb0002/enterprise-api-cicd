@@ -41,6 +41,10 @@ jobs:
       - name: Checkout code
         # Utilise l'action officielle checkout.
         uses: actions/checkout@v4
+        # Recupere tout l'historique Git pour que Gitleaks puisse comparer les commits de la PR.
+        with:
+          # 0 veut dire: telecharger tout l'historique, pas seulement le dernier commit.
+          fetch-depth: 0
 
       # Installe le SDK .NET.
       - name: Setup .NET
