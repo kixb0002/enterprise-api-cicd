@@ -153,7 +153,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         # Construit l'image avec un tag commit SHA et un tag latest.
         run: |
-          docker build -pull \
+          docker build --pull \
             -t ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             -t ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest \
             .
