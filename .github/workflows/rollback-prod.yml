@@ -31,11 +31,11 @@ jobs:
         # Parametres de connexion Azure.
         with:
           # Client ID de l'App Registration GitHub OIDC.
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
           # Tenant ID Azure.
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           # Subscription ID Azure.
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       # Inverse le slot green et la production.
       - name: Swap back production and green
