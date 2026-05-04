@@ -118,6 +118,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Se connecte a Azure avec OIDC uniquement sur la branche main.
+      - name: Validate Azure secrets presence
+        if: github.ref == 'refs/heads/main'
+        run: |
+          test -n "${{ secrets.AZURE_CLIENT_ID }}" || (echo "AZURE_CLIENT_ID is missing" && exit 1)
+          test -n "${{ secrets.AZURE_TENANT_ID }}" || (echo "AZURE_TENANT_ID is missing" && exit 1)
+          test -n "${{ secrets.AZURE_SUBSCRIPTION_ID }}" || (echo "AZURE_SUBSCRIPTION_ID is missing" && exit 1)
+          echo "Azure secrets are present."
+
       - name: Azure login with OIDC
         # Execute cette etape seulement pour les push sur main.
         if: github.ref == 'refs/heads/main'
