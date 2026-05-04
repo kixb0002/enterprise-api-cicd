@@ -29,7 +29,8 @@ RUN dotnet publish src/Enterprise.Api/Enterprise.Api.csproj \
     --no-restore
 
 # Utilise l'image runtime ASP.NET Core 8, plus legere que l'image SDK.
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+#FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled AS runtime
 
 # Definit le repertoire de travail de l'application finale.
 WORKDIR /app
