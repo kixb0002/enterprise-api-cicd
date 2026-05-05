@@ -1,21 +1,31 @@
 # Nom affiche dans l'onglet Actions de GitHub.
 name: CD - Blue Green Production
+
 # Definit les evenements qui declenchent le workflow.
 on:
+  # Permet de lancer le workflow manuellement depuis GitHub Actions.
   workflow_dispatch:
-     inputs:
-       image_tag:
-         description: "Image tag to deploy, usually GitHub SHA"
-         required: true
-         type: string
+    # Parametres demandes au lancement manuel.
+    inputs:
+      # Tag de l'image Docker a deployer.
+      image_tag:
+        # Description affichee dans l'interface GitHub.
+        description: "Image tag to deploy, usually GitHub SHA"
+        # Rend le parametre obligatoire.
+        required: true
+        # Type de la valeur attendue.
+        type: string
 
+  # Permet de lancer le CD automatiquement apres le CI.
   workflow_run:
+    # Nom exact du workflow CI qui doit declencher le CD.
     workflows: ["CI - Build Test Security Package"]
+    # Declenche le CD quand le CI est termine.
     types:
       - completed
+    # Ne declenche automatiquement le CD que pour les runs CI de main.
     branches:
       - main
-
 
 # Permissions donnees au token GitHub Actions.
 permissions:
@@ -28,13 +38,45 @@ permissions:
 env:
   # Nom de l'image Docker a deployer.
   IMAGE_NAME: "enterprise-api"
-  IMAGE_TAG: ${{ inputs.image_tag || github.event.workflow_run.head_sha }}
+
 # Liste des jobs du workflow.
 jobs:
+  # Job sans environnement production qui decide si le deploiement doit continuer.
+  prepare-deployment:
+    # Execute le job sur un runner Linux fourni par GitHub.
+    runs-on: ubuntu-latest
+    # Expose les informations calculees aux jobs suivants.
+    outputs:
+      should_deploy: ${{ steps.decision.outputs.should_deploy }}
+      image_tag: ${{ steps.decision.outputs.image_tag }}
+
+    # Liste des etapes du job.
+    steps:
+      # Determine si le CD doit continuer et quel tag d'image deployer.
+      - name: Decide deployment source
+        id: decision
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "image_tag=${{ inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ] && [ "${{ github.event.workflow_run.head_branch }}" = "main" ]; then
+            echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+            echo "image_tag=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          echo "image_tag=" >> "$GITHUB_OUTPUT"
+
   # Job qui deploie sur le slot green puis fait le swap vers production.
   deploy-green-and-swap:
-    # Ça évite de déployer si le CI a échoué.
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    # Attend le job de preparation avant d'entrer dans l'environnement production.
+    needs: prepare-deployment
+    # Lance le deploiement uniquement si le job de preparation l'autorise.
+    if: needs.prepare-deployment.outputs.should_deploy == 'true'
     # Execute le job sur un runner Linux fourni par GitHub.
     runs-on: ubuntu-latest
     # Associe le job a l'environnement GitHub production.
@@ -63,7 +105,7 @@ jobs:
             --resource-group ${{ vars.RESOURCE_GROUP }} \
             --name ${{ vars.APP_NAME }} \
             --slot ${{ vars.SLOT_NAME }} \
-            --container-image-name ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+            --container-image-name ${{ vars.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ needs.prepare-deployment.outputs.image_tag }} \
             --container-registry-url https://${{ vars.ACR_LOGIN_SERVER }}
 
       # Redemarre le slot green apres changement d'image.
