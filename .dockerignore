@@ -1,8 +1,14 @@
 # Ignore les dossiers de sortie compiles par .NET.
 bin/
 
+# Ignore les dossiers bin dans tous les sous-projets .NET.
+**/bin/
+
 # Ignore les fichiers temporaires generes par .NET pendant restore/build.
 obj/
+
+# Ignore les dossiers obj dans tous les sous-projets .NET.
+**/obj/
 
 # Ignore l'historique Git pour reduire le contexte Docker.
 .git/

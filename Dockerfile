@@ -16,8 +16,8 @@ COPY tests/Enterprise.Api.UnitTests/Enterprise.Api.UnitTests.csproj tests/Enterp
 # Copie le fichier projet des tests d'integration pour restaurer leurs packages.
 COPY tests/Enterprise.Api.IntegrationTests/Enterprise.Api.IntegrationTests.csproj tests/Enterprise.Api.IntegrationTests/
 
-# Restaure les dependances NuGet de la solution.
-RUN dotnet restore
+# Restaure les dependances NuGet de l'API.
+RUN dotnet restore src/Enterprise.Api/Enterprise.Api.csproj
 
 # Copie tout le code source et les autres fichiers du projet.
 COPY . .
@@ -29,7 +29,8 @@ RUN dotnet publish src/Enterprise.Api/Enterprise.Api.csproj \
     --no-restore
 
 # Utilise l'image runtime ASP.NET Core 8, plus legere que l'image SDK.
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+#FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled AS runtime
 
 # Definit le repertoire de travail de l'application finale.
 WORKDIR /app
